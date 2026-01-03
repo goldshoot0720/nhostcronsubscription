@@ -3,11 +3,14 @@ name: Fetch Subscription Every 6h26m
 on:
   schedule:
     - cron: "26 */6 * * *"  # 每 6 小時 26 分鐘執行一次（UTC時間）
-  workflow_dispatch:        # 可手動觸發
+  workflow_dispatch:
 
 jobs:
   fetch_subscription:
     runs-on: ubuntu-latest
+    env:
+      NHOST_GRAPHQL_URL: ${{ secrets.NHOST_GRAPHQL_URL }}
+      NHOST_ADMIN_SECRET: ${{ secrets.NHOST_ADMIN_SECRET }}
 
     steps:
       - name: Checkout repo
@@ -25,19 +28,12 @@ jobs:
             -o subscription.json
 
       - name: Show fetched data
-        run: |
-          echo "Fetched subscription data:"
-          cat subscription.json
+        run: cat subscription.json
 
-      - name: Convert to CSV (Supabase 格式)
-        run: |
-          echo "\$id,name,site,price,nextdate,note,account" > subscription.csv
-          jq -r '.data.subscription[] | "\(.id),\(.name),\(.site),\(.price),\(.nextdate),\(.note),\(.account)"' subscription.json >> subscription.csv
-
-      - name: Commit & push CSV if changed
+      - name: Commit & push JSON if changed
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add subscription.csv
-          git diff --cached --quiet || git commit -m "Update subscription CSV"
+          git add subscription.json
+          git diff --cached --quiet || git commit -m "Update subscription JSON"
           git push
