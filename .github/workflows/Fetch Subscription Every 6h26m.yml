@@ -23,14 +23,7 @@ jobs:
               "query": "query { subscription(order_by: { nextdate: asc }) { id name site price nextdate note account } }"
             }' \
             -o subscription.json
-
-      - name: Show fetched data
-        run: cat subscription.json
-
-      - name: Commit & push JSON if changed
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            
           git add subscription.json
           git diff --cached --quiet || git commit -m "Update subscription JSON"
           # 使用 GITHUB_TOKEN 推送
