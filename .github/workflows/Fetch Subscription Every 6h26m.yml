@@ -23,9 +23,6 @@ jobs:
               "query": "query { subscription(order_by: { nextdate: asc }) { id name site price nextdate note account } }"
             }' \
             -o subscription.json
-            
-          git add subscription.json
-          git diff --cached --quiet || git commit -m "Update subscription JSON"
-          # 使用 GITHUB_TOKEN 推送
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin HEAD:main
+
+      - name: Show fetched data
+        run: cat subscription.json
