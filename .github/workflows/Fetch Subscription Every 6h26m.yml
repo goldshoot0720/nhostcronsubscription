@@ -2,7 +2,7 @@ name: Fetch Subscription Every 6h26m
 
 on:
   schedule:
-    - cron: "26 */6 * * *"  # 每 6 小時 26 分鐘執行一次（UTC時間）
+    - cron: "26 */6 * * *"  # 每 6 小時 26 分鐘執行一次 (UTC)
   workflow_dispatch:        # 可手動觸發
 
 jobs:
@@ -10,35 +10,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 先把 repo 內容 checkout 下來
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ 抓取 subscription JSON
       - name: Fetch subscription from Nhost GraphQL
         run: |
           set -x
-          curl -s -X POST "$NHOST_GRAPHQL_URL" \
+          curl -s -X POST "${{ secrets.NHOST_GRAPHQL_URL }}" \
             -H "Content-Type: application/json" \
-            -H "x-hasura-admin-secret: $NHOST_ADMIN_SECRET" \
+            -H "x-hasura-admin-secret: ${{ secrets.NHOST_ADMIN_SECRET }}" \
             -d '{
               "query": "query { subscription(order_by: { nextdate: asc }) { id name site price nextdate note account } }"
             }' \
             -o subscription.json
 
-      # 3️⃣ 列出檔案確認 JSON 是否存在（debug）
-      - name: List files
-        run: ls -l
-
-      # 4️⃣ 顯示抓到的 JSON（debug，可刪）
       - name: Show fetched data
         run: cat subscription.json
 
-      # 5️⃣ Commit & push JSON 回 repo
       - name: Commit & push JSON if changed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add subscription.json
           git diff --cached --quiet || git commit -m "Update subscription JSON"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          git push
