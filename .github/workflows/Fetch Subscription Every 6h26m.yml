@@ -3,19 +3,18 @@ name: Fetch Subscription Every 6h26m
 on:
   schedule:
     - cron: "26 */6 * * *"  # 每 6 小時 26 分鐘執行一次（UTC時間）
-  workflow_dispatch:
+  workflow_dispatch:        # 可手動觸發
 
 jobs:
   fetch_subscription:
     runs-on: ubuntu-latest
-    env:
-      NHOST_GRAPHQL_URL: ${{ secrets.NHOST_GRAPHQL_URL }}
-      NHOST_ADMIN_SECRET: ${{ secrets.NHOST_ADMIN_SECRET }}
 
     steps:
+      # 1️⃣ 先把 repo 內容 checkout 下來
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2️⃣ 抓取 subscription JSON
       - name: Fetch subscription from Nhost GraphQL
         run: |
           set -x
@@ -27,13 +26,19 @@ jobs:
             }' \
             -o subscription.json
 
+      # 3️⃣ 列出檔案確認 JSON 是否存在（debug）
+      - name: List files
+        run: ls -l
+
+      # 4️⃣ 顯示抓到的 JSON（debug，可刪）
       - name: Show fetched data
         run: cat subscription.json
 
+      # 5️⃣ Commit & push JSON 回 repo
       - name: Commit & push JSON if changed
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add subscription.json
           git diff --cached --quiet || git commit -m "Update subscription JSON"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
